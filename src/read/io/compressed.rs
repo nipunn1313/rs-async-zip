@@ -11,8 +11,8 @@ use async_compression::tokio::bufread;
 use tokio::io::{AsyncRead, ReadBuf, BufReader};
 use pin_project::pin_project;
 
-#[pin_project(project = CompressionReaderProj)]
-pub(crate) enum CompressionReader<R> where R: AsyncRead + Unpin {
+#[pin_project(project = CompressedReaderProj)]
+pub(crate) enum CompressedReader<R> where R: AsyncRead + Unpin {
     Stored(#[pin] R),
     #[cfg(feature = "deflate")]
     Deflate(#[pin] bufread::DeflateDecoder<BufReader<R>>),
@@ -26,38 +26,38 @@ pub(crate) enum CompressionReader<R> where R: AsyncRead + Unpin {
     Xz(#[pin] bufread::XzDecoder<BufReader<R>>),
 }
 
-impl<R> CompressionReader<R> where R: AsyncRead + Unpin {
+impl<R> CompressedReader<R> where R: AsyncRead + Unpin {
     pub(crate) fn new(reader: R, compression: Compression) -> Self {
         match compression {
-            Compression::Stored => CompressionReader::Stored(reader),
+            Compression::Stored => CompressedReader::Stored(reader),
             #[cfg(feature = "deflate")]
-            Compression::Deflate => CompressionReader::Deflate(bufread::DeflateDecoder::new(BufReader::new(reader))),
+            Compression::Deflate => CompressedReader::Deflate(bufread::DeflateDecoder::new(BufReader::new(reader))),
             #[cfg(feature = "bzip2")]
-            Compression::Bz => CompressionReader::Bz(bufread::BzDecoder::new(BufReader::new(reader))),
+            Compression::Bz => CompressedReader::Bz(bufread::BzDecoder::new(BufReader::new(reader))),
             #[cfg(feature = "lzma")]
-            Compression::Lzma => CompressionReader::Lzma(bufread::LzmaDecoder::new(BufReader::new(reader))),
+            Compression::Lzma => CompressedReader::Lzma(bufread::LzmaDecoder::new(BufReader::new(reader))),
             #[cfg(feature = "zstd")]
-            Compression::Zstd => CompressionReader::Zstd(bufread::ZstdDecoder::new(BufReader::new(reader))),
+            Compression::Zstd => CompressedReader::Zstd(bufread::ZstdDecoder::new(BufReader::new(reader))),
             #[cfg(feature = "xz")]
-            Compression::Xz => CompressionReader::Xz(bufread::XzDecoder::new(BufReader::new(reader))),
+            Compression::Xz => CompressedReader::Xz(bufread::XzDecoder::new(BufReader::new(reader))),
         }
     }
 }
 
-impl<R: AsyncRead + Unpin> AsyncRead for CompressionReader<R> {
+impl<R> AsyncRead for CompressedReader<R> where R: AsyncRead + Unpin {
     fn poll_read(self: Pin<&mut Self>, c: &mut Context<'_>, b: &mut ReadBuf<'_>) -> Poll<tokio::io::Result<()>> {
         match self.project() {
-            CompressionReaderProj::Stored(inner) => inner.poll_read(c, b),
+            CompressedReaderProj::Stored(inner) => inner.poll_read(c, b),
             #[cfg(feature = "deflate")]
-            CompressionReaderProj::Deflate(inner) => inner.poll_read(c, b),
+            CompressedReaderProj::Deflate(inner) => inner.poll_read(c, b),
             #[cfg(feature = "bzip2")]
-            CompressionReaderProj::Bz(inner) => inner.poll_read(c, b),
+            CompressedReaderProj::Bz(inner) => inner.poll_read(c, b),
             #[cfg(feature = "lzma")]
-            CompressionReaderProj::Lzma(inner) => inner.poll_read(c, b),
+            CompressedReaderProj::Lzma(inner) => inner.poll_read(c, b),
             #[cfg(feature = "zstd")]
-            CompressionReaderProj::Zstd(inner) => inner.poll_read(c, b),
+            CompressedReaderProj::Zstd(inner) => inner.poll_read(c, b),
             #[cfg(feature = "xz")]
-            CompressionReaderProj::Xz(inner) => inner.poll_read(c, b),
+            CompressedReaderProj::Xz(inner) => inner.poll_read(c, b),
         }
     }
 }
