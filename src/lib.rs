@@ -16,7 +16,6 @@ pub mod error;
 pub mod read;
 pub(crate) mod spec;
 pub(crate) mod entry;
-pub(crate) mod utils;
 pub mod write;
 
 pub use crate::spec::compression::Compression;
@@ -24,3 +23,4 @@ pub use crate::spec::attribute::AttributeCompatibility;
 
 pub use crate::entry::{ZipEntry, builder::ZipEntryBuilder};
 pub use crate::entry::ext::{ZipEntryExt, ZipEntryBuilderExt};
+pub use crate::read::io::entry::{ZipEntryReader, ZipEntryReaderExt};

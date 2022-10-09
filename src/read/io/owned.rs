@@ -14,14 +14,14 @@ use pin_project::pin_project;
 #[pin_project(project = OwnedReaderProj)]
 pub(crate) enum OwnedReader<'a, R> where R: AsyncRead + Unpin {
     Owned(#[pin] R),
-    MutBorrow(#[pin] &'a mut R),
+    Borrow(#[pin] &'a mut R),
 }
 
 impl<'a, R> AsyncRead for OwnedReader<'a, R> where R: AsyncRead + Unpin {
     fn poll_read(self: Pin<&mut Self>, c: &mut Context<'_>, b: &mut ReadBuf<'_>) -> Poll<tokio::io::Result<()>> {
         match self.project() {
             OwnedReaderProj::Owned(inner) => inner.poll_read(c, b),
-            OwnedReaderProj::MutBorrow(inner) => inner.poll_read(c, b),
+            OwnedReaderProj::Borrow(inner) => inner.poll_read(c, b),
         }
     }
 }

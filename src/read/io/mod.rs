@@ -4,6 +4,7 @@
 pub(crate) mod compressed;
 pub(crate) mod hashed;
 pub(crate) mod owned;
+pub(crate) mod entry;
 
 /// A macro that returns the inner value of an Ok or early-returns in the case of an Err.
 /// 
