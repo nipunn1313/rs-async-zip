@@ -16,8 +16,6 @@ pub mod error;
 pub mod read;
 pub(crate) mod spec;
 pub(crate) mod entry;
-#[cfg(test)]
-pub(crate) mod tests;
 pub(crate) mod utils;
 pub mod write;
 
