@@ -42,7 +42,7 @@ impl<R> HashedReader<R> where R: AsyncRead + Unpin {
     }
 }
 
-impl<R: AsyncRead + Unpin> AsyncRead for HashedReader <R> {
+impl<R> AsyncRead for HashedReader <R> where R: AsyncRead + Unpin {
     fn poll_read(self: Pin<&mut Self>, c: &mut Context<'_>, b: &mut ReadBuf<'_>) -> Poll<tokio::io::Result<()>> {
         let project = self.project();
         let prev_len = b.filled().len();
