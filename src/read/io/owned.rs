@@ -9,7 +9,8 @@ use pin_project::pin_project;
 
 /// A wrapping reader which holds an owned R or a mutable borrow to R.
 /// 
-/// This is used to represent whether the supplied reader can be acted on concurrently or not.
+/// This is used to represent whether the supplied reader can be acted on concurrently or not (with an owned value
+/// suggesting that R implements some method of synchronisation & cloning).
 #[pin_project(project = OwnedReaderProj)]
 pub(crate) enum OwnedReader<'a, R> where R: AsyncRead + Unpin {
     Owned(#[pin] R),
