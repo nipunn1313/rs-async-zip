@@ -103,6 +103,7 @@ compressed_test_helper!(
 /// A helper macro for generating a CompressedReader test using a specific compression method.
 macro_rules! compressed_test_helper {
     ($name:ident, $typ:expr, $data_raw:expr, $data:expr) => {
+        #[cfg(test)]
         #[tokio::test]
         async fn $name() {
             use std::io::Cursor;

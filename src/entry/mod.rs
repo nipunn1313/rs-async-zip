@@ -8,6 +8,7 @@ use chrono::{DateTime, Utc};
 use crate::spec::compression::Compression;
 use crate::spec::attribute::AttributeCompatibility;
 use crate::entry::builder::ZipEntryBuilder;
+use crate::spec::header::GeneralPurposeFlag;
 
 #[cfg(doc)]
 use crate::entry::ext::ZipEntryExt;
@@ -117,4 +118,9 @@ impl ZipEntry {
     pub fn comment(&self) -> &str {
         &self.comment
     }
+}
+
+pub(crate) struct ZipEntryMeta {
+    pub(crate) general_purpose_flag: GeneralPurposeFlag,
+    pub(crate) file_offset: Option<u32>,
 }

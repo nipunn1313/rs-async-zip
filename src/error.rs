@@ -27,4 +27,8 @@ pub enum ZipError {
     EntryIndexOutOfBounds,
     #[error("Compressed size is required to be present in the Local File Header when using Stored compression.")]
     MissingCompressedSize,
+    #[error("Attempted to read a ZIP64 file whilst on a 32-bit target.")]
+    TargetZip64Unsupported,
+    #[error("The number of entries read does not match the number within the EOCDH.")]
+    NumOfEntriesMismatch,
 }

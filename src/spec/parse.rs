@@ -153,7 +153,7 @@ impl From<[u8; 18]> for EndOfCentralDirectoryHeader {
 }
 
 impl LocalFileHeader {
-    pub async fn from_reader<R: AsyncRead + Unpin>(reader: &mut R) -> Result<LocalFileHeader> {
+    pub async fn from_reader<R: AsyncRead + Unpin>(mut reader: R) -> Result<LocalFileHeader> {
         let mut buffer: [u8; 26] = [0; 26];
         reader.read_exact(&mut buffer).await?;
         Ok(LocalFileHeader::from(buffer))
@@ -161,7 +161,7 @@ impl LocalFileHeader {
 }
 
 impl EndOfCentralDirectoryHeader {
-    pub async fn from_reader<R: AsyncRead + Unpin>(reader: &mut R) -> Result<EndOfCentralDirectoryHeader> {
+    pub async fn from_reader<R: AsyncRead + Unpin>(mut reader: R) -> Result<EndOfCentralDirectoryHeader> {
         let mut buffer: [u8; 18] = [0; 18];
         reader.read_exact(&mut buffer).await?;
         Ok(EndOfCentralDirectoryHeader::from(buffer))
@@ -169,7 +169,7 @@ impl EndOfCentralDirectoryHeader {
 }
 
 impl CentralDirectoryHeader {
-    pub async fn from_reader<R: AsyncRead + Unpin>(reader: &mut R) -> Result<CentralDirectoryHeader> {
+    pub async fn from_reader<R: AsyncRead + Unpin>(mut reader: R) -> Result<CentralDirectoryHeader> {
         let mut buffer: [u8; 42] = [0; 42];
         reader.read_exact(&mut buffer).await?;
         Ok(CentralDirectoryHeader::from(buffer))

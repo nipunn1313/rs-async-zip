@@ -54,6 +54,7 @@ impl<R> AsyncRead for HashedReader <R> where R: AsyncRead + Unpin {
     }
 }
 
+#[cfg(test)]
 #[tokio::test]
 async fn hashed_reader_test() {
     use std::io::Cursor;

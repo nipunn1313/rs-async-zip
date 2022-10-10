@@ -38,6 +38,7 @@ impl<'a, R> ZipEntryReaderExt for ZipEntryReader<'a, R> where R: AsyncRead + Unp
 
 }
 
+/// A trait that extends [`ZipEntryReaderExt`]'s functionality.
 pub trait ZipEntryReaderExt {
 
 }
