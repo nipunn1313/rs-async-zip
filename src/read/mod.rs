@@ -6,16 +6,32 @@
 pub(crate) mod io;
 pub mod seek;
 pub mod mem;
+pub mod fs;
 
 use crate::error::{ZipError, Result};
 use crate::entry::{ZipEntry, ZipEntryMeta};
+use crate::file::ZipFile;
 use crate::spec::compression::Compression;
-use crate::spec::header::CentralDirectoryHeader;
+use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryHeader};
 use crate::spec::attribute::AttributeCompatibility;
 
-use tokio::io::{AsyncRead, Take};
+use tokio::io::{AsyncRead, AsyncSeek, AsyncSeekExt, SeekFrom, Take};
 
-pub(crate) async fn read_cd<R>(reader: Take<R>, num_of_entries: u64) -> Result<(Vec<ZipEntry>, Vec<ZipEntryMeta>)>
+pub(crate) async fn file<R>(mut reader: R) -> Result<ZipFile> where  R: AsyncRead + AsyncSeek + Unpin {
+    reader.seek(SeekFrom::End(0)).await?;
+    let eocdr_offset = crate::read::io::locator::eocdr(&mut reader).await?;
+
+    reader.seek(SeekFrom::Start(eocdr_offset)).await?;
+    let eocdr = EndOfCentralDirectoryHeader::from_reader(&mut reader).await?;
+    let comment = crate::read::io::read_string(&mut reader, eocdr.file_comm_length.into()).await?;
+
+    reader.seek(SeekFrom::Start(eocdr.cent_dir_offset.into())).await?;
+    let (entries, metas) = crate::read::cd(&mut reader, eocdr.num_of_entries.into()).await?;
+    
+    Ok(ZipFile { entries, metas, comment })
+}
+
+pub(crate) async fn cd<R>(mut reader: R, num_of_entries: u64) -> Result<(Vec<ZipEntry>, Vec<ZipEntryMeta>)>
 where 
     R: AsyncRead + Unpin
 {
@@ -24,13 +40,16 @@ where
     let mut metas = Vec::with_capacity(num_of_entries);
 
     for _ in 0..num_of_entries {
+        let (entry, meta) = cd_record(&mut reader).await?;
 
+        entries.push(entry);
+        metas.push(meta);
     }
 
     Ok((entries, metas))
 }
 
-pub(crate) async fn read_cd_entry<R>(mut reader: R) -> Result<(ZipEntry, ZipEntryMeta)>
+pub(crate) async fn cd_record<R>(mut reader: R) -> Result<(ZipEntry, ZipEntryMeta)>
 where 
     R: AsyncRead + Unpin
 {

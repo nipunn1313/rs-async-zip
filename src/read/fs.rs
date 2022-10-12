@@ -1,11 +1,11 @@
 // Copyright (c) 2022 Harry [Majored] [hello@majored.pw]
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
-//! A concurrent reader which acts over an owned vector of bytes.
+//! A concurrent reader which acts on a file system path.
 //! 
 //! Concurrency is achieved as a result of:
-//! - Wrapping the provided vector of bytes within an [`Arc`] to allow shared ownership.
-//! - Wrapping this [`Arc`] around a [`Cursor`] when reading (as the [`Arc`] can deref and coerce into a `&[u8]`).
+//! - Wrapping the provided path within an [`Arc`] to allow shared ownership.
+//! - Constructing a new [`File`] from the path when reading.
 //! 
 //! ### Usage
 //! Unlike the [`seek`] module, we no longer hold a mutable reference to any inner reader which in turn, allows the
@@ -15,12 +15,11 @@
 //! 
 //! ### Concurrent Example
 //! ```
-//! # use async_zip::read::mem::ZipFileReader;
+//! # use async_zip::read::fs::ZipFileReader;
 //! # use async_zip::error::Result;
 //! #
 //! # async fn run() -> Result<()> {
-//! let data: Vec<u8> = Vec::new();
-//! let reader = ZipFileReader::new(data).await?;
+//! let reader = ZipFileReader::new("./foo.zip").await?;
 //! 
 //! let fut_gen = |index| { async {
 //!     let mut entry_reader = local_reader.entry_reader(index).await?;
@@ -35,12 +34,11 @@
 //! 
 //! ### Parallel Example
 //! ```
-//! # use async_zip::read::mem::ZipFileReader;
+//! # use async_zip::read::fs::ZipFileReader;
 //! # use async_zip::error::Result;
 //! #
 //! # async fn run() -> Result<()> {
-//! let data: Vec<u8> = Vec::new();
-//! let reader = ZipFileReader::new(data).await?;
+//! let reader = ZipFileReader::new("./foo.zip").await?;
 //! 
 //! let fut_gen |index| {
 //!     let local_reader = reader.clone();
@@ -66,10 +64,12 @@ use crate::spec::compression::Compression;
 use crate::error::Result;
 
 use std::sync::Arc;
-use std::io::Cursor;
+use std::path::{Path, PathBuf};
+
+use tokio::fs::File;
 
 struct Inner {
-    data: Vec<u8>,
+    path: PathBuf,
     file: ZipFile,
 }
 
@@ -80,16 +80,18 @@ pub struct ZipFileReader {
 }
 
 impl ZipFileReader {
-    pub async fn new(data: Vec<u8>) -> Result<ZipFileReader> {
-        let file = crate::read::file(Cursor::new(&data)).await?;
-        Ok(ZipFileReader { inner: Arc::new(Inner { data, file }) })
+    pub async fn new<P>(path: P) -> Result<ZipFileReader> where P: AsRef<Path> {
+        let path = path.as_ref().to_owned();
+        let file = crate::read::file(File::open(&path).await?).await?;
+        
+        Ok(ZipFileReader { inner: Arc::new(Inner { path, file }) })
     }
 
-    pub async fn entry_reader(&self, index: usize) -> Result<ZipEntryReader<Cursor<&[u8]>>> {
+    pub async fn entry_reader(&self, index: usize) -> Result<ZipEntryReader<File>> {
         let entry = self.inner.file.entries.get(index).unwrap();
         let meta = self.inner.file.metas.get(index).unwrap();
 
-        let cursor = Cursor::new(&self.inner.data[..]);
-        Ok(ZipEntryReader::new_with_owned(cursor, Compression::Deflate, 0))
+        let fs_file = File::open(&self.inner.path).await?;
+        Ok(ZipEntryReader::new_with_owned(fs_file, Compression::Deflate, 0))
     }
 }

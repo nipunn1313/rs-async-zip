@@ -1,7 +1,10 @@
 // Copyright (c) 2022 Harry [Majored] [hello@majored.pw]
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
-use tokio::io::AsyncRead;
+use crate::error::{Result, ZipError};
+use crate::spec::signature::END_OF_CENTRAL_DIRECTORY;
+
+use tokio::io::{AsyncRead, AsyncReadExt};
 
 // https://github.com/Majored/rs-async-zip/blob/main/SPECIFICATION.md#4316
 // 
@@ -19,17 +22,33 @@ use tokio::io::AsyncRead;
 // The below solution is one that compromises on these two contention points. Please submit an issue or PR if you know
 // of a better algorithm for this (and have tested/verified its performance).
 
-pub(crate) async fn signature_locator<R>(reader: R, signature: &[u8]) -> std::io::Result<Vec<usize>>
+/// Locate the 'end of central directory record' offset, if one exists.
+pub(crate) async fn eocdr<R>(mut reader: R) -> Result<u64>
 where 
     R: AsyncRead + Unpin,
 {
-    let locations: Vec<usize> = Vec::new();
+    let signature = &END_OF_CENTRAL_DIRECTORY.to_le_bytes();
+    let mut buffer = [0u8; 2048];
+    let mut total_read = 0usize;
+    let mut matched = Option::<SignatureMatch>::None;
 
     loop {
-        
-    }
+        let read = reader.read(&mut buffer).await?;
+        if read == 0 {
+            return Err(ZipError::UnableToLocateEOCDR);
+        }
 
-    Ok(locations)
+        let filled = &buffer[..read];
+        let search = reverse_search_buffer(filled, signature);
+
+        if let Some(matched) = search {
+
+        } else {
+
+        }
+
+        total_read += read;
+    }
 }
 
 /// A type which holds data about a match within 'reverse_search_buffer()'.

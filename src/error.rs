@@ -31,4 +31,6 @@ pub enum ZipError {
     TargetZip64Unsupported,
     #[error("The number of entries read does not match the number within the EOCDH.")]
     NumOfEntriesMismatch,
+    #[error("Unable to locate the end of central directory record.")]
+    UnableToLocateEOCDR,
 }
