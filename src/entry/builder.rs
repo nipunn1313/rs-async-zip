@@ -1,6 +1,7 @@
 // Copyright (c) 2022 Harry [Majored] [hello@majored.pw]
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
+#[cfg(feature = "date")]
 use chrono::{DateTime, Utc};
 use crate::spec::compression::Compression;
 use crate::spec::attribute::AttributeCompatibility;
@@ -36,6 +37,7 @@ impl ZipEntryBuilder {
     }
 
     /// Sets the entry's last modification date.
+    #[cfg(feature = "date")]
     pub fn last_modification_date(mut self, date: DateTime<Utc>) -> Self {
         self.0.last_modification_date = date;
         self

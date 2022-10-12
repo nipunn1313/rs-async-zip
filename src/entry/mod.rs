@@ -4,6 +4,7 @@
 pub mod ext;
 pub mod builder;
 
+#[cfg(feature = "date")]
 use chrono::{DateTime, Utc};
 use crate::spec::compression::Compression;
 use crate::spec::attribute::AttributeCompatibility;
@@ -29,6 +30,7 @@ pub struct ZipEntry {
     pub(crate) uncompressed_size: u32,
     pub(crate) compressed_size: u32,
     pub(crate) attribute_compatibility: AttributeCompatibility,
+    #[cfg(feature = "date")]
     pub(crate) last_modification_date: DateTime<Utc>,
     pub(crate) internal_file_attribute: u16,
     pub(crate) external_file_attribute: u32,
@@ -51,6 +53,7 @@ impl ZipEntry {
             uncompressed_size: 0,
             compressed_size: 0,
             attribute_compatibility: AttributeCompatibility::Unix,
+            #[cfg(feature = "date")]
             last_modification_date: Utc::now(),
             internal_file_attribute: 0,
             external_file_attribute: 0,
@@ -95,6 +98,7 @@ impl ZipEntry {
     }
 
     /// Returns the entry's last modification time & date.
+    #[cfg(feature = "date")]
     pub fn last_modification_date(&self) -> &DateTime<Utc> {
         &self.last_modification_date
     }
