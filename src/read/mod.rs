@@ -18,7 +18,6 @@ use crate::spec::attribute::AttributeCompatibility;
 use tokio::io::{AsyncRead, AsyncSeek, AsyncSeekExt, SeekFrom, Take};
 
 pub(crate) async fn file<R>(mut reader: R) -> Result<ZipFile> where  R: AsyncRead + AsyncSeek + Unpin {
-    reader.seek(SeekFrom::End(0)).await?;
     let eocdr_offset = crate::read::io::locator::eocdr(&mut reader).await?;
 
     reader.seek(SeekFrom::Start(eocdr_offset)).await?;

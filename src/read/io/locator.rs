@@ -2,9 +2,21 @@
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
 use crate::error::{Result, ZipError};
-use crate::spec::signature::END_OF_CENTRAL_DIRECTORY;
+use crate::spec::consts::{EOCDR_SIGNATURE, EOCDR_LENGTH};
 
-use tokio::io::{AsyncRead, AsyncReadExt};
+use tokio::io::{AsyncRead, AsyncReadExt, AsyncSeek, AsyncSeekExt, SeekFrom};
+
+/// 
+const BUFFER_SIZE: usize = 2048;
+
+/// 
+const MIN_DATA_LENGTH: usize = EOCDR_LENGTH + EOCDR_SIGNATURE.to_le_bytes().len();
+
+/// 
+const EOCDR_UPPER_BOUND: u64 = EOCDR_LENGTH as u64;
+
+/// 
+const EOCDR_LOWER_BOUND: u64 = u16::MAX as u64;
 
 // https://github.com/Majored/rs-async-zip/blob/main/SPECIFICATION.md#4316
 // 
@@ -23,32 +35,28 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 // of a better algorithm for this (and have tested/verified its performance).
 
 /// Locate the 'end of central directory record' offset, if one exists.
+/// 
+/// 
 pub(crate) async fn eocdr<R>(mut reader: R) -> Result<u64>
 where 
-    R: AsyncRead + Unpin,
+    R: AsyncRead + AsyncSeek + Unpin,
 {
-    let signature = &END_OF_CENTRAL_DIRECTORY.to_le_bytes();
-    let mut buffer = [0u8; 2048];
-    let mut total_read = 0usize;
-    let mut matched = Option::<SignatureMatch>::None;
 
-    loop {
-        let read = reader.read(&mut buffer).await?;
-        if read == 0 {
-            return Err(ZipError::UnableToLocateEOCDR);
-        }
+    let length = reader.seek(SeekFrom::End(0)).await?;
+    let position = reverse_seek(&mut reader, length, (EOCDR_LENGTH + BUFFER_SIZE) as u64).await?;
 
-        let filled = &buffer[..read];
-        let search = reverse_search_buffer(filled, signature);
+    while position >= EOCDR_LOWER_BOUND {
 
-        if let Some(matched) = search {
-
-        } else {
-
-        }
-
-        total_read += read;
     }
+
+    todo!();
+}
+
+pub(crate) async fn reverse_seek<R>(mut reader: R, length: u64, position: u64) -> std::io::Result<u64>
+where 
+    R: AsyncRead + AsyncSeek + Unpin
+{
+    reader.seek(SeekFrom::Start(length - std::cmp::min(length, position))).await
 }
 
 /// A type which holds data about a match within 'reverse_search_buffer()'.
