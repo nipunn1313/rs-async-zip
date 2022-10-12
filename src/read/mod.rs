@@ -12,7 +12,7 @@ use crate::error::{ZipError, Result};
 use crate::entry::{ZipEntry, ZipEntryMeta};
 use crate::file::ZipFile;
 use crate::spec::compression::Compression;
-use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryHeader};
+use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryRecord};
 use crate::spec::attribute::AttributeCompatibility;
 
 use tokio::io::{AsyncRead, AsyncSeek, AsyncSeekExt, SeekFrom, Take};
@@ -22,7 +22,7 @@ pub(crate) async fn file<R>(mut reader: R) -> Result<ZipFile> where  R: AsyncRea
     let eocdr_offset = crate::read::io::locator::eocdr(&mut reader).await?;
 
     reader.seek(SeekFrom::Start(eocdr_offset)).await?;
-    let eocdr = EndOfCentralDirectoryHeader::from_reader(&mut reader).await?;
+    let eocdr = EndOfCentralDirectoryRecord::from_reader(&mut reader).await?;
     let comment = crate::read::io::read_string(&mut reader, eocdr.file_comm_length.into()).await?;
 
     reader.seek(SeekFrom::Start(eocdr.cent_dir_offset.into())).await?;

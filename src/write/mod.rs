@@ -57,7 +57,7 @@ pub(crate) mod entry_whole;
 pub use entry_stream::EntryStreamWriter;
 
 use crate::error::Result;
-use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryHeader};
+use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryRecord};
 use crate::entry::ZipEntry;
 use async_io_utilities::AsyncOffsetWriter;
 use entry_whole::EntryWholeWriter;
@@ -119,7 +119,7 @@ impl<W: AsyncWrite + Unpin> ZipFileWriter<W> {
             self.writer.write_all(entry.entry.comment().as_bytes()).await?;
         }
 
-        let header = EndOfCentralDirectoryHeader {
+        let header = EndOfCentralDirectoryRecord {
             disk_num: 0,
             start_cent_dir_disk: 0,
             num_of_entries_disk: self.cd_entries.len() as u16,

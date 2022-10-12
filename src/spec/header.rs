@@ -44,7 +44,7 @@ pub struct CentralDirectoryHeader {
 }
 
 // https://github.com/Majored/rs-async-zip/blob/main/SPECIFICATION.md#4316
-pub struct EndOfCentralDirectoryHeader {
+pub struct EndOfCentralDirectoryRecord {
     pub(crate) disk_num: u16,
     pub(crate) start_cent_dir_disk: u16,
     pub(crate) num_of_entries_disk: u16,

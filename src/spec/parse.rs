@@ -2,7 +2,7 @@
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
 use crate::error::Result;
-use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryHeader, GeneralPurposeFlag, LocalFileHeader};
+use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryRecord, GeneralPurposeFlag, LocalFileHeader};
 
 use tokio::io::{AsyncRead, AsyncReadExt};
 
@@ -71,7 +71,7 @@ impl CentralDirectoryHeader {
     }
 }
 
-impl EndOfCentralDirectoryHeader {
+impl EndOfCentralDirectoryRecord {
     pub fn as_slice(&self) -> [u8; 18] {
         let mut array = [0; 18];
         let mut cursor = 0;
@@ -138,9 +138,9 @@ impl From<[u8; 42]> for CentralDirectoryHeader {
     }
 }
 
-impl From<[u8; 18]> for EndOfCentralDirectoryHeader {
-    fn from(value: [u8; 18]) -> EndOfCentralDirectoryHeader {
-        EndOfCentralDirectoryHeader {
+impl From<[u8; 18]> for EndOfCentralDirectoryRecord {
+    fn from(value: [u8; 18]) -> EndOfCentralDirectoryRecord {
+        EndOfCentralDirectoryRecord {
             disk_num: u16::from_le_bytes(value[0..2].try_into().unwrap()),
             start_cent_dir_disk: u16::from_le_bytes(value[2..4].try_into().unwrap()),
             num_of_entries_disk: u16::from_le_bytes(value[4..6].try_into().unwrap()),
@@ -160,11 +160,11 @@ impl LocalFileHeader {
     }
 }
 
-impl EndOfCentralDirectoryHeader {
-    pub async fn from_reader<R: AsyncRead + Unpin>(mut reader: R) -> Result<EndOfCentralDirectoryHeader> {
+impl EndOfCentralDirectoryRecord {
+    pub async fn from_reader<R: AsyncRead + Unpin>(mut reader: R) -> Result<EndOfCentralDirectoryRecord> {
         let mut buffer: [u8; 18] = [0; 18];
         reader.read_exact(&mut buffer).await?;
-        Ok(EndOfCentralDirectoryHeader::from(buffer))
+        Ok(EndOfCentralDirectoryRecord::from(buffer))
     }
 }
 
