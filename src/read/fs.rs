@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Harry [Majored] [hello@majored.pw]
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
-//! A concurrent reader which acts on a file system path.
+//! A concurrent ZIP reader which acts over a file system path.
 //! 
 //! Concurrency is achieved as a result of:
 //! - Wrapping the provided path within an [`Arc`] to allow shared ownership.
@@ -60,12 +60,12 @@ use crate::read::seek;
 
 use crate::read::io::entry::ZipEntryReader;
 use crate::file::ZipFile;
-use crate::spec::compression::Compression;
 use crate::error::Result;
 
 use std::sync::Arc;
 use std::path::{Path, PathBuf};
 
+use tokio::io::{AsyncSeekExt, SeekFrom};
 use tokio::fs::File;
 
 struct Inner {
@@ -73,7 +73,7 @@ struct Inner {
     file: ZipFile,
 }
 
-/// A concurrent reader which acts over an owned vector of bytes.
+/// A concurrent ZIP reader which acts over an owned vector of bytes.
 #[derive(Clone)]
 pub struct ZipFileReader {
     inner: Arc<Inner>,
@@ -87,11 +87,17 @@ impl ZipFileReader {
         Ok(ZipFileReader { inner: Arc::new(Inner { path, file }) })
     }
 
-    pub async fn entry_reader(&self, index: usize) -> Result<ZipEntryReader<File>> {
-        let entry = self.inner.file.entries.get(index).unwrap();
-        let meta = self.inner.file.metas.get(index).unwrap();
+    pub fn file(&self) -> &ZipFile {
+        &self.inner.file
+    }
 
-        let fs_file = File::open(&self.inner.path).await?;
-        Ok(ZipEntryReader::new_with_owned(fs_file, Compression::Deflate, 0))
+    pub async fn entry(&self, index: usize) -> Result<ZipEntryReader<File>> {
+        let entry = self.inner.file.entries.get(index).ok_or(ZipError::EntryIndexOutOfBounds)?;
+        let meta = self.inner.file.metas.get(index).ok_or(ZipError::EntryIndexOutOfBounds)?;
+        let seek_to = crate::read::compute_data_offset(&entry, &meta);
+        let mut fs_file = File::open(&self.inner.path).await?;
+        
+        fs_file.seek(SeekFrom::Start(seek_to)).await?;
+        Ok(ZipEntryReader::new_with_owned(fs_file, entry.compression(), entry.uncompressed_size()))
     }
 }

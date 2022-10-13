@@ -15,6 +15,7 @@ use crate::file::ZipFile;
 use crate::spec::compression::Compression;
 use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryRecord};
 use crate::spec::attribute::AttributeCompatibility;
+use crate::spec::consts::{LFH_LENGTH, SIGNATURE_LENGTH};
 
 use tokio::io::{AsyncRead, AsyncSeek, AsyncSeekExt, SeekFrom, Take};
 
@@ -24,6 +25,11 @@ pub(crate) async fn file<R>(mut reader: R) -> Result<ZipFile> where  R: AsyncRea
     reader.seek(SeekFrom::Start(eocdr_offset)).await?;
     let eocdr = EndOfCentralDirectoryRecord::from_reader(&mut reader).await?;
     let comment = crate::read::io::read_string(&mut reader, eocdr.file_comm_length.into()).await?;
+
+    // Outdated feature so unlikely to ever make it into this crate.
+    if eocdr.disk_num != eocdr.start_cent_dir_disk || eocdr.num_of_entries != eocdr.num_of_entries_disk {
+        return Err(ZipError::FeatureNotSupported("Spanned/split files"));
+    }
 
     reader.seek(SeekFrom::Start(eocdr.cent_dir_offset.into())).await?;
     let (entries, metas) = crate::read::cd(&mut reader, eocdr.num_of_entries.into()).await?;
@@ -66,8 +72,8 @@ where
         compression,
         attribute_compatibility: AttributeCompatibility::Unix, /// FIXME: Default to Unix for the moment
         crc32: header.crc,
-        uncompressed_size: header.uncompressed_size,
-        compressed_size: header.compressed_size,
+        uncompressed_size: header.uncompressed_size as u64,
+        compressed_size: header.compressed_size as u64,
         #[cfg(feature = "date")]
         last_modification_date,
         internal_file_attribute: header.inter_attr,
@@ -78,8 +84,15 @@ where
 
     let meta = ZipEntryMeta {
         general_purpose_flag: header.flags,
-        file_offset: Some(header.lh_offset),
+        file_offset: header.lh_offset as u64,
     };
 
     Ok((entry, meta))
+}
+
+pub(crate) fn compute_data_offset(entry: &ZipEntry, meta: &ZipEntryMeta) -> u64 {
+    let header_length = SIGNATURE_LENGTH + LFH_LENGTH;
+    let trailing_length = entry.comment().as_bytes().len() + entry.extra_field().len();
+    
+    meta.file_offset + (header_length as u64) + (trailing_length as u64)
 }

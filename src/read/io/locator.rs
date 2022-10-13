@@ -45,8 +45,8 @@ where
     let length = reader.seek(SeekFrom::End(0)).await?;
     let position = reverse_seek(&mut reader, length, (EOCDR_LENGTH + BUFFER_SIZE) as u64).await?;
 
-    while position >= EOCDR_LOWER_BOUND {
-
+    while position >= EOCDR_LOWER_BOUND && position.checked_sub(length).is_some() {
+        
     }
 
     todo!();

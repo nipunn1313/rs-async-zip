@@ -27,8 +27,8 @@ pub struct ZipEntry {
     pub(crate) filename: String,
     pub(crate) compression: Compression,
     pub(crate) crc32: u32,
-    pub(crate) uncompressed_size: u32,
-    pub(crate) compressed_size: u32,
+    pub(crate) uncompressed_size: u64,
+    pub(crate) compressed_size: u64,
     pub(crate) attribute_compatibility: AttributeCompatibility,
     #[cfg(feature = "date")]
     pub(crate) last_modification_date: DateTime<Utc>,
@@ -83,12 +83,12 @@ impl ZipEntry {
     }
 
     /// Returns the entry's uncompressed size.
-    pub fn uncompressed_size(&self) -> u32 {
+    pub fn uncompressed_size(&self) -> u64 {
         self.uncompressed_size
     }
 
     /// Returns the entry's compressed size.
-    pub fn compressed_size(&self) -> u32 {
+    pub fn compressed_size(&self) -> u64 {
         self.compressed_size
     }
 
@@ -126,5 +126,5 @@ impl ZipEntry {
 
 pub(crate) struct ZipEntryMeta {
     pub(crate) general_purpose_flag: GeneralPurposeFlag,
-    pub(crate) file_offset: Option<u32>,
+    pub(crate) file_offset: u64,
 }

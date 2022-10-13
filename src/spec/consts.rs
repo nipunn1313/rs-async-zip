@@ -1,5 +1,7 @@
-// Copyright (c) 2021 Harry [Majored] [hello@majored.pw]
+// Copyright (c) 2022 Harry [Majored] [hello@majored.pw]
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
+
+pub const SIGNATURE_LENGTH: usize = 4;
 
 // Local file header constants
 // 

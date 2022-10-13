@@ -13,3 +13,15 @@ pub struct ZipFile {
     pub(crate) comment: String,
 }
 
+impl ZipFile {
+    /// Returns a list of this ZIP file's entries.
+    pub fn entries(&self) -> &[ZipEntry] {
+        &self.entries
+    }
+
+    /// Returns this ZIP file's trailing comment.
+    pub fn comment(&self) -> &str {
+        &self.comment
+    }
+}
+

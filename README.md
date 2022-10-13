@@ -1,9 +1,9 @@
 # async_zip
-[![Crates.io](https://img.shields.io/crates/v/async_zip)](https://crates.io/crates/async_zip)
-[![Crates.io](https://img.shields.io/crates/d/async_zip)](https://crates.io/crates/async_zip)
-[![docs.rs](https://img.shields.io/docsrs/async_zip)](https://docs.rs/async_zip/)
-[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Majored/rs-async-zip/Rust/main)](https://github.com/Majored/rs-async-zip/actions?query=branch%3Amain)
-[![GitHub](https://img.shields.io/github/license/Majored/rs-async-zip)](https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/async_zip?style=flat-square)](https://crates.io/crates/async_zip)
+[![Crates.io](https://img.shields.io/crates/d/async_zip?style=flat-square)](https://crates.io/crates/async_zip)
+[![docs.rs](https://img.shields.io/docsrs/async_zip?style=flat-square)](https://docs.rs/async_zip/)
+[![GitHub Workflow Status (branch)](https://img.shields.io/github/workflow/status/Majored/rs-async-zip/Rust/main?style=flat-square)](https://github.com/Majored/rs-async-zip/actions?query=branch%3Amain)
+[![GitHub](https://img.shields.io/github/license/Majored/rs-async-zip?style=flat-square)](https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
 An asynchronous ZIP archive reading/writing crate powered by [`tokio`](https://crates.io/crates/tokio).
 
@@ -14,21 +14,17 @@ An asynchronous ZIP archive reading/writing crate powered by [`tokio`](https://c
 - Aims for reasonable [specification](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT) compliance.
 
 ## Installation & Basic Usage
-
 ```toml
 [dependencies]
 async_zip = { version = "0.1.0", features = ["full"] }
 ```
 
-A (soon to be) extensive list of [examples](https://github.com/Majored/rs-async-zip/tree/main/examples) can be found under the `/examples` directory.
-
-## Feature Flags
-
-- `date` - Enables support for parsing dates/times stored in ZIPs via `chrono`.
+### Feature Flags
+- `date` - Enables support for parsing dates stored in ZIPs via `chrono`.
 - `fs` - Enables support for the `fs` reading module.
-- `deflate` - Enables support for the deflate compression method.
+- `deflate` - Enables support for the Deflate compression method.
 - `bzip2` - Enables support for the bzip2 compression method.
-- `lzma` - Enables support for the lzma compression method.
+- `lzma` - Enables support for the LZMA compression method.
 - `zstd` - Enables support for the zstd compression method.
 - `xz` - Enables support for the xz compression method.
 
@@ -38,11 +34,11 @@ use tokio::{io::AsyncReadExt, fs::File};
 use async_zip::read::seek::ZipFileReader;
 ...
 
-let mut file = File::open("./Archive.zip").await.unwrap();
-let mut zip = ZipFileReader::new(&mut file).await.unwrap();
+let mut file = File::open("./Archive.zip").await?;
+let mut zip = ZipFileReader::new(&mut file).await?;
 
-let mut reader = zip.entry_reader(0).await.unwrap();
-let txt = reader.read_to_string_crc().await.unwrap();
+let mut reader = zip.entry_reader(0).await?;
+let txt = reader.read_to_string_crc().await?;
 
 println!("{}", txt);
 ```
@@ -54,20 +50,20 @@ use async_zip::{Compression, ZipEntryBuilder};
 use tokio::fs::File;
 ...
 
-let mut file = File::create("foo.zip").await.unwrap();
+let mut file = File::create("foo.zip").await?;
 let mut writer = ZipFileWriter::new(&mut file);
 
 let data = b"This is an example file.";
 let builder = ZipEntryBuilder::new(String::from("bar.txt"), Compression::Deflate);
 
-writer.write_entry_whole(builder, data).await.unwrap();
-writer.close().await.unwrap();
+writer.write_entry_whole(builder, data).await?;
+writer.close().await?;
 ```
 
 ## Contributions
 Whilst I will be continuing to maintain this crate myself, reasonable specification compliance is a huge undertaking for a single individual. As such, contributions will always be encouraged and appreciated.
 
-No contribution guidelines exist but additions should be developed with readability in mind, with appropriate comments, and make use of `rustfmt`.
+No contribution guidelines exist but additions should be developed with readability in mind, with appropriate comments, and make use of `rustfmt` & `clippy`.
 
 ## Issues & Support
 Whether you're wanting to report a bug you've come across during use of this crate or are seeking general help/assistance, please utilise the [issues tracker](https://github.com/Majored/rs-async-zip/issues) and provide as much detail as possible (eg. recreation steps).
