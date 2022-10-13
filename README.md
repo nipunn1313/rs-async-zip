@@ -17,10 +17,20 @@ An asynchronous ZIP archive reading/writing crate powered by [`tokio`](https://c
 
 ```toml
 [dependencies]
-async_zip = "0.0.9"
+async_zip = { version = "0.1.0", features = ["full"] }
 ```
 
 A (soon to be) extensive list of [examples](https://github.com/Majored/rs-async-zip/tree/main/examples) can be found under the `/examples` directory.
+
+## Feature Flags
+
+- `date` - Enables support for parsing dates/times stored in ZIPs via `chrono`.
+- `fs` - Enables support for the `fs` reading module.
+- `deflate` - Enables support for the deflate compression method.
+- `bzip2` - Enables support for the bzip2 compression method.
+- `lzma` - Enables support for the lzma compression method.
+- `zstd` - Enables support for the zstd compression method.
+- `xz` - Enables support for the xz compression method.
 
 ### Reading
 ```rust

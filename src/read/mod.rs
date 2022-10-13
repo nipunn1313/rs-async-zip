@@ -6,6 +6,7 @@
 pub(crate) mod io;
 pub mod seek;
 pub mod mem;
+#[cfg(feature = "fs")]
 pub mod fs;
 
 use crate::error::{ZipError, Result};

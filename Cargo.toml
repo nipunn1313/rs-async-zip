@@ -16,13 +16,14 @@ categories = ["asynchronous", "compression"]
 [features]
 full = ["date", "fs", "deflate", "bzip2", "lzma", "zstd", "xz"]
 
+date = ["dep:chrono"]
+fs = ["tokio/fs"]
+
 deflate = ["async-compression/deflate"]
 bzip2 = ["async-compression/bzip2"]
 lzma = ["async-compression/lzma"]
 zstd = ["async-compression/zstd"]
 xz = ["async-compression/xz"]
-date = ["dep:chrono"]
-fs = ["tokio/fs"]
 
 [dependencies]
 crc32fast = "1.3.2"
