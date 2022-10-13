@@ -60,7 +60,7 @@ use crate::read::seek;
 
 use crate::read::io::entry::ZipEntryReader;
 use crate::file::ZipFile;
-use crate::error::Result;
+use crate::error::{Result, ZipError};
 
 use std::sync::Arc;
 use std::path::{Path, PathBuf};
