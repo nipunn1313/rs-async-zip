@@ -158,3 +158,29 @@ fn search_two_byte_test() {
     assert!(!matched.as_ref().unwrap().full_match);
     assert_eq!(0, matched.as_ref().unwrap().match_index);
 }
+
+#[cfg(test)]
+#[tokio::test]
+async fn locator_empty_test() {
+    use std::io::Cursor;
+
+    let data = &include_bytes!("../../../data/locator/empty.zip");
+    let mut cursor = Cursor::new(data);
+    let eocdr = eocdr(&mut cursor).await;
+    
+    assert!(eocdr.is_ok());
+    assert_eq!(eocdr.unwrap(), 0);
+}
+
+#[cfg(test)]
+#[tokio::test]
+async fn locator_empty_max_comment_test() {
+    use std::io::Cursor;
+
+    let data = &include_bytes!("../../../data/locator/empty-with-max-comment.zip");
+    let mut cursor = Cursor::new(data);
+    let eocdr = eocdr(&mut cursor).await;
+    
+    assert!(eocdr.is_ok());
+    assert_eq!(eocdr.unwrap(), 0);
+}

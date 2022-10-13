@@ -8,6 +8,9 @@ use std::task::{Context, Poll};
 
 #[cfg(any(feature = "deflate", feature = "bzip2", feature = "zstd", feature = "lzma", feature = "xz"))]
 use async_compression::tokio::bufread;
+#[cfg(any(feature = "deflate", feature = "bzip2", feature = "zstd", feature = "lzma", feature = "xz"))]
+use tokio::io::BufReader;
+
 use tokio::io::{AsyncRead, ReadBuf};
 use pin_project::pin_project;
 
