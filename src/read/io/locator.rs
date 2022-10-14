@@ -49,32 +49,15 @@ where
     let length = reader.seek(SeekFrom::End(0)).await?;
     let signature = &EOCDR_SIGNATURE.to_le_bytes();
     let mut buffer: [u8; BUFFER_SIZE] = [0; BUFFER_SIZE];
-    let mut position = reader.seek(SeekFrom::Start(length.saturating_sub((EOCDR_LENGTH + BUFFER_SIZE) as u64))).await?;
-    let mut search: Option<SignatureMatch> = None;
+
+    let mut position = length.saturating_sub((EOCDR_LENGTH + BUFFER_SIZE) as u64);
+    reader.seek(SeekFrom::Start(position)).await?;
 
     loop {
         let read = reader.read(&mut buffer).await?;
-        let slice = &buffer[..read];
 
-        // If we have a previous partial match, we need to check whether the end of the newly read buffer would now
-        // result in a full match.
-        if let Some(matched) = search.as_ref() {
-            let partial_buffer = &slice[slice.len() - (matched.match_index + 1)..];
-            let partial_signature = &signature[..(matched.match_index + 1)];
-
-            if let Some(new_matched) = reverse_search_buffer(partial_buffer, partial_signature) {
-                // We should never have another partial match as we've calculated the partial bounds above.
-                assert!(new_matched.full_match);
-                return Ok(position + (slice.len() - (matched.match_index + 1)) as u64);
-            }
-        }
-
-        if let Some(matched) = reverse_search_buffer(slice, signature) {
-            if matched.full_match {
-                return Ok(position + ((matched.match_index + 1) - signature.len()) as u64);
-            } else {
-                search = Some(matched);
-            }
+        if let Some(match_index) = reverse_search_buffer(&buffer[..read], signature) {
+            return Ok(position + ((match_index + 1) - SIGNATURE_LENGTH) as u64);
         }
 
         // If we hit the start of the data or the lower bound, we're unable to locate the EOCDR.
@@ -82,17 +65,12 @@ where
             return Err(ZipError::UnableToLocateEOCDR);
         }
 
-        position = reader.seek(SeekFrom::Start(position.saturating_sub(BUFFER_SIZE as u64))).await?;
+        // To handle the case where the EOCDR signature crosses buffer boundaries, we simply overlap reads by the
+        // signature length. This significantly reduces the complexity of handling partial matches with very little
+        // overhead.
+        position = position.saturating_sub((BUFFER_SIZE - SIGNATURE_LENGTH) as u64);
+        reader.seek(SeekFrom::Start(position)).await?;
     }
-}
-
-/// A type which holds data about a match within 'reverse_search_buffer()'.
-/// 
-/// The 'match_index' field indicates where the match starts with respects to the reverse order (ie. the match occurs
-/// at indexes <= match_index).
-struct SignatureMatch {
-    full_match: bool,
-    match_index: usize,
 }
 
 /// A naive reverse linear search along the buffer for the specified signature bytes.
@@ -100,14 +78,14 @@ struct SignatureMatch {
 /// This is already surprisingly performant. For instance, using memchr::memchr() to match for the first byte of the
 /// signature, and then manual byte comparisons for the remaining signature bytes was actually slower by a factor of
 /// 2.25. This method was explored as tokio's `read_until()` implementation uses memchr::memchr().
-fn reverse_search_buffer(buffer: &[u8], signature: &[u8]) -> Option<SignatureMatch> {
+fn reverse_search_buffer(buffer: &[u8], signature: &[u8]) -> Option<usize> {
     'outer: for index in (0..buffer.len()).rev() {
         for (signature_index, signature_byte) in signature.iter().rev().enumerate() {
             let index_to_check = index.checked_sub(signature_index);
 
-            // We have a partial match but have hit the start of the buffer.
-            if index_to_check.is_none() && signature_index != 0 { 
-                return Some(SignatureMatch { full_match: false, match_index: index });
+            // We can ignore the partial match case due to the reasons described above.
+            if index_to_check.is_none() && signature_index != 0 {
+                break 'outer;
             }
 
             if buffer[index_to_check.unwrap()] != *signature_byte {
@@ -115,7 +93,7 @@ fn reverse_search_buffer(buffer: &[u8], signature: &[u8]) -> Option<SignatureMat
             }
         }
 
-        return Some(SignatureMatch { full_match: true, match_index: index });
+        return Some(index);
     }
 
     None
@@ -135,8 +113,7 @@ fn search_one_byte_test() {
 
     let matched = reverse_search_buffer(buffer, signature);
     assert!(matched.is_some());
-    assert!(matched.as_ref().unwrap().full_match);
-    assert_eq!(1, matched.as_ref().unwrap().match_index);
+    assert_eq!(1, matched.unwrap());
 }
 
 #[cfg(test)]
@@ -147,16 +124,7 @@ fn search_two_byte_test() {
 
     let matched = reverse_search_buffer(buffer, signature);
     assert!(matched.is_some());
-    assert!(matched.as_ref().unwrap().full_match);
-    assert_eq!(1, matched.as_ref().unwrap().match_index);
-
-    let buffer: &[u8] = &[0x1, 0x0, 0x0, 0x0, 0x0, 0x0];
-    let signature: &[u8] = &[0x2, 0x1];
-
-    let matched = reverse_search_buffer(buffer, signature);
-    assert!(matched.is_some());
-    assert!(!matched.as_ref().unwrap().full_match);
-    assert_eq!(0, matched.as_ref().unwrap().match_index);
+    assert_eq!(1, matched.unwrap());
 }
 
 #[cfg(test)]
@@ -178,6 +146,19 @@ async fn locator_empty_max_comment_test() {
     use std::io::Cursor;
 
     let data = &include_bytes!("../../../data/locator/empty-with-max-comment.zip");
+    let mut cursor = Cursor::new(data);
+    let eocdr = eocdr(&mut cursor).await;
+    
+    assert!(eocdr.is_ok());
+    assert_eq!(eocdr.unwrap(), 0);
+}
+
+#[cfg(test)]
+#[tokio::test]
+async fn locator_buffer_boundary_test() {
+    use std::io::Cursor;
+
+    let data = &include_bytes!("../../../data/locator/empty-buffer-boundary.zip");
     let mut cursor = Cursor::new(data);
     let eocdr = eocdr(&mut cursor).await;
     
