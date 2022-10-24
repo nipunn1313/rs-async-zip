@@ -14,7 +14,7 @@
 //! should be cloned and moved into those contexts when needed.
 //! 
 //! ### Concurrent Example
-//! ```
+//! ```no_run
 //! # use async_zip::read::fs::ZipFileReader;
 //! # use async_zip::error::Result;
 //! #
@@ -33,14 +33,14 @@
 //! ```
 //! 
 //! ### Parallel Example
-//! ```
+//! ```no_run
 //! # use async_zip::read::fs::ZipFileReader;
 //! # use async_zip::error::Result;
 //! #
 //! # async fn run() -> Result<()> {
 //! let reader = ZipFileReader::new("./foo.zip").await?;
 //! 
-//! let fut_gen |index| {
+//! let fut_gen = |index| {
 //!     let local_reader = reader.clone();
 //! 
 //!     tokio::spawn(async move {
@@ -73,13 +73,14 @@ struct Inner {
     file: ZipFile,
 }
 
-/// A concurrent ZIP reader which acts over an owned vector of bytes.
+/// A concurrent ZIP reader which acts over a file system path.
 #[derive(Clone)]
 pub struct ZipFileReader {
     inner: Arc<Inner>,
 }
 
 impl ZipFileReader {
+    /// Constructs a new ZIP reader from a file system path.
     pub async fn new<P>(path: P) -> Result<ZipFileReader> where P: AsRef<Path> {
         let path = path.as_ref().to_owned();
         let file = crate::read::file(File::open(&path).await?).await?;
@@ -87,10 +88,17 @@ impl ZipFileReader {
         Ok(ZipFileReader { inner: Arc::new(Inner { path, file }) })
     }
 
+    /// Returns this ZIP file's information.
     pub fn file(&self) -> &ZipFile {
         &self.inner.file
     }
 
+    /// Returns the file system path provided to the reader during construction.
+    pub fn path(&self) -> &Path {
+        &self.inner.path
+    }
+
+    /// Returns a new entry reader if the provided index is valid.
     pub async fn entry(&self, index: usize) -> Result<ZipEntryReader<File>> {
         let entry = self.inner.file.entries.get(index).ok_or(ZipError::EntryIndexOutOfBounds)?;
         let meta = self.inner.file.metas.get(index).ok_or(ZipError::EntryIndexOutOfBounds)?;

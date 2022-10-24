@@ -24,14 +24,6 @@ impl<R> HashedReader<R> where R: AsyncRead + Unpin {
         Self { reader, hasher: Hasher::default() }
     }
 
-    /// Consumes this reader and returns the computed CRC32 hash.
-    /// 
-    /// This method is consuming as the internal hasher also requires consuming in order to compute the hash. See the
-    /// non-consuming counterpart, swap_and_compute_hash(), as an alternative.
-    pub(crate) fn compute_hash(self) -> u32 {
-        self.hasher.finalize()
-    }
-
     /// Swaps the internal hasher and returns the computed CRC32 hash.
     /// 
     /// The internal hasher is taken and replaced with a newly-constructed one. As a result, this method should only be
@@ -70,5 +62,5 @@ async fn hashed_reader_test() {
     reader.read_to_string(&mut read_data).await.expect("read into HashedReader failed");
 
     assert_eq!(data, read_data);
-    assert_eq!(data_crc32, reader.compute_hash());
+    assert_eq!(data_crc32, reader.swap_and_compute_hash());
 }

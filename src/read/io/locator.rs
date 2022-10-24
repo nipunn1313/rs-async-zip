@@ -1,7 +1,7 @@
 // Copyright (c) 2022 Harry [Majored] [hello@majored.pw]
 // MIT License (https://github.com/Majored/rs-async-zip/blob/main/LICENSE)
 
-//! https://github.com/Majored/rs-async-zip/blob/main/SPECIFICATION.md#4316
+//! <https://github.com/Majored/rs-async-zip/blob/main/SPECIFICATION.md#4316>
 //! 
 //! As with other ZIP libraries, we face the predicament that the end of central directory record may contain a
 //! variable-length file comment. As a result, we cannot just make the assumption that the start of this record is

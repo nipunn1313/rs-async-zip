@@ -6,6 +6,7 @@
 pub(crate) mod io;
 pub mod seek;
 pub mod mem;
+pub mod stream;
 #[cfg(feature = "fs")]
 pub mod fs;
 
@@ -17,7 +18,7 @@ use crate::spec::header::{CentralDirectoryHeader, EndOfCentralDirectoryRecord};
 use crate::spec::attribute::AttributeCompatibility;
 use crate::spec::consts::{LFH_LENGTH, SIGNATURE_LENGTH};
 
-use tokio::io::{AsyncRead, AsyncSeek, AsyncSeekExt, SeekFrom, Take};
+use tokio::io::{AsyncRead, AsyncSeek, AsyncSeekExt, SeekFrom};
 
 pub(crate) async fn file<R>(mut reader: R) -> Result<ZipFile> where  R: AsyncRead + AsyncSeek + Unpin {
     let eocdr_offset = crate::read::io::locator::eocdr(&mut reader).await?;

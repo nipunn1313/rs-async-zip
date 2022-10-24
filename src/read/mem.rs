@@ -14,7 +14,7 @@
 //! should be cloned and moved into those contexts when needed.
 //! 
 //! ### Concurrent Example
-//! ```
+//! ```no_run
 //! # use async_zip::read::mem::ZipFileReader;
 //! # use async_zip::error::Result;
 //! #
@@ -34,7 +34,7 @@
 //! ```
 //! 
 //! ### Parallel Example
-//! ```
+//! ```no_run
 //! # use async_zip::read::mem::ZipFileReader;
 //! # use async_zip::error::Result;
 //! #
@@ -42,7 +42,7 @@
 //! let data: Vec<u8> = Vec::new();
 //! let reader = ZipFileReader::new(data).await?;
 //! 
-//! let fut_gen |index| {
+//! let fut_gen = |index| {
 //!     let local_reader = reader.clone();
 //! 
 //!     tokio::spawn(async move {
@@ -74,22 +74,30 @@ struct Inner {
     file: ZipFile,
 }
 
-/// A concurrent reader which acts over an owned vector of bytes.
+// A concurrent ZIP reader which acts over an owned vector of bytes.
 #[derive(Clone)]
 pub struct ZipFileReader {
     inner: Arc<Inner>,
 }
 
 impl ZipFileReader {
+    /// Constructs a new ZIP reader from an owned vector of bytes.
     pub async fn new(data: Vec<u8>) -> Result<ZipFileReader> {
         let file = crate::read::file(Cursor::new(&data)).await?;
         Ok(ZipFileReader { inner: Arc::new(Inner { data, file }) })
     }
 
+    /// Returns this ZIP file's information.
     pub fn file(&self) -> &ZipFile {
         &self.inner.file
     }
 
+    /// Returns the raw bytes provided to the reader during construction.
+    pub fn data(&self) -> &[u8] {
+        &self.inner.data
+    }
+
+    /// Returns a new entry reader if the provided index is valid.
     pub async fn entry(&self, index: usize) -> Result<ZipEntryReader<Cursor<&[u8]>>> {
         let entry = self.inner.file.entries.get(index).ok_or(ZipError::EntryIndexOutOfBounds)?;
         let meta = self.inner.file.metas.get(index).ok_or(ZipError::EntryIndexOutOfBounds)?;
