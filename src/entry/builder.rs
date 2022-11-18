@@ -29,6 +29,20 @@ impl ZipEntryBuilder {
         Self(ZipEntry::new(filename, compression))
     }
 
+    /// Sets the entry's filename
+    pub fn filename(mut self, filename: String) -> Self {
+        self.0.filename = filename;
+        self
+    }
+
+    /// Set the deflate compression option.
+    ///
+    /// If the compression type isn't deflate, this option has no effect.
+    pub fn deflate_option(mut self, option: DeflateOption) -> Self {
+        self.0.compression_level = option.into_level();
+        self
+    }
+
     /// Sets the entry's attribute host compatibility.
     pub fn attribute_compatibility(mut self, compatibility: AttributeCompatibility) -> Self {
         self.0.attribute_compatibility = compatibility;
